@@ -30,15 +30,20 @@ Crea un archivo `.env` en tu proyecto:
 
 ```env
 # Requerido
-JWT_SECRET=tu-clave-secreta-super-segura
+GITDEPLOY_JWT_SECRET=tu-clave-secreta-super-segura
 
 # Configuración Git
-GIT_BINARY=/usr/bin/git
-PROJECT_ROOT=/ruta/a/tu/proyecto
+GITDEPLOY_GIT_BINARY=/usr/bin/git
+GITDEPLOY_PROJECT_ROOT=/ruta/a/tu/proyecto
 
 # Telegram (opcional)
-TELEGRAM_BOT_TOKEN=tu-token-bot-telegram
-TELEGRAM_CHAT_ID=tu-chat-id-telegram
+GITDEPLOY_TELEGRAM_BOT_TOKEN=tu-token-bot-telegram
+GITDEPLOY_TELEGRAM_CHAT_ID=tu-chat-id-telegram
+
+# Deployment (opcional)
+GITDEPLOY_DEPLOYMENT_ENABLED=true
+GITDEPLOY_AUTO_COMPOSER=true
+GITDEPLOY_BACKUP_COMMITS=true
 ```
 
 ### 2. Crear el Endpoint del Webhook
@@ -71,7 +76,7 @@ try {
 En tu proyecto de GitLab:
 1. Ve a **Settings > Webhooks**
 2. URL: `https://tu-dominio.com/webhook.php`
-3. Secret Token: El mismo valor de `JWT_SECRET`
+3. Secret Token: El mismo valor de `GITDEPLOY_JWT_SECRET`
 4. Trigger: Marca **Push events**
 
 ¡Listo! Ahora cada push a tu repositorio ejecutará automáticamente el deployment.
@@ -159,7 +164,50 @@ curl -X POST https://tu-dominio.com/webhook.php \
   -d '{"action": "deploy", "force_composer": true}'
 ```
 
-## 🔧 Configuración para Hostings Compartidos
+## � Mejores Prácticas para Variables de Entorno
+
+### ¿Por qué usar prefijo GITDEPLOY_?
+
+1. **Evita conflictos**: Previene sobrescribir variables de otras librerías
+2. **Claridad**: Es obvio qué variables pertenecen a GitDeploy
+3. **Organización**: Facilita la gestión de configuraciones complejas
+4. **Estándares**: Sigue las mejores prácticas de la industria
+
+### Migración de Variables Antiguas
+
+Si ya usas variables sin prefijo, GitDeploy las seguirá respetando pero mostrará avisos de deprecación:
+
+```bash
+# ⚠️ Formato anterior (funciona pero deprecated)
+JWT_SECRET=mi-secreto
+TELEGRAM_BOT_TOKEN=mi-token
+
+# ✅ Nuevo formato (recomendado)
+GITDEPLOY_JWT_SECRET=mi-secreto
+GITDEPLOY_TELEGRAM_BOT_TOKEN=mi-token
+```
+
+### Prioridad de Variables
+
+GitDeploy busca las variables en este orden:
+1. `GITDEPLOY_*` (prioridad alta)
+2. Variables sin prefijo (compatibilidad)
+3. Valores por defecto
+
+### Generación de JWT_SECRET Seguro
+
+```bash
+# Opción 1: OpenSSL
+openssl rand -base64 32
+
+# Opción 2: PHP
+php -r "echo base64_encode(random_bytes(32));"
+
+# Opción 3: Online (solo para desarrollo)
+# https://generate-secret.vercel.app/32
+```
+
+## �🔧 Configuración para Hostings Compartidos
 
 ### cPanel/Shared Hosting
 
@@ -199,16 +247,33 @@ FIX_PERMISSIONS=true
 
 ## 📝 Variables de Entorno
 
+**Nuevas variables (recomendadas):**
+
 | Variable | Requerido | Descripción |
 |----------|-----------|-------------|
-| `JWT_SECRET` | ✅ | Clave secreta para JWT |
-| `GIT_BINARY` | ❌ | Ruta al binario de Git |
-| `PROJECT_ROOT` | ❌ | Ruta raíz del proyecto |
-| `TELEGRAM_BOT_TOKEN` | ❌ | Token del bot de Telegram |
-| `TELEGRAM_CHAT_ID` | ❌ | ID del chat de Telegram |
-| `DEPLOYMENT_ENABLED` | ❌ | Habilitar deployment automático |
-| `AUTO_COMPOSER` | ❌ | Ejecutar composer automáticamente |
-| `BACKUP_COMMITS` | ❌ | Hacer backup de commits |
+| `GITDEPLOY_JWT_SECRET` | ✅ | Clave secreta para JWT |
+| `GITDEPLOY_GIT_BINARY` | ❌ | Ruta al binario de Git |
+| `GITDEPLOY_PROJECT_ROOT` | ❌ | Ruta raíz del proyecto |
+| `GITDEPLOY_TELEGRAM_BOT_TOKEN` | ❌ | Token del bot de Telegram |
+| `GITDEPLOY_TELEGRAM_CHAT_ID` | ❌ | ID del chat de Telegram |
+| `GITDEPLOY_DEPLOYMENT_ENABLED` | ❌ | Habilitar deployment automático |
+| `GITDEPLOY_AUTO_COMPOSER` | ❌ | Ejecutar composer automáticamente |
+| `GITDEPLOY_BACKUP_COMMITS` | ❌ | Hacer backup de commits |
+| `GITDEPLOY_CLEAR_CACHE` | ❌ | Limpiar cache después del deployment |
+| `GITDEPLOY_FIX_PERMISSIONS` | ❌ | Corregir permisos de archivos |
+| `GITDEPLOY_VALIDATE_GITLAB_IPS` | ❌ | Validar IPs de GitLab |
+
+**Variables antiguas (compatibilidad hacia atrás - deprecated):**
+
+| Variable | Estado | Migrar a |
+|----------|--------|----------|
+| `JWT_SECRET` | ⚠️ Deprecated | `GITDEPLOY_JWT_SECRET` |
+| `GIT_BINARY` | ⚠️ Deprecated | `GITDEPLOY_GIT_BINARY` |
+| `PROJECT_ROOT` | ⚠️ Deprecated | `GITDEPLOY_PROJECT_ROOT` |
+| `TELEGRAM_BOT_TOKEN` | ⚠️ Deprecated | `GITDEPLOY_TELEGRAM_BOT_TOKEN` |
+| `TELEGRAM_CHAT_ID` | ⚠️ Deprecated | `GITDEPLOY_TELEGRAM_CHAT_ID` |
+
+> **⚠️ Importante:** Las variables sin prefijo se eliminarán en la v2.0.0. Usa las versiones con prefijo `GITDEPLOY_` para evitar conflictos con otras librerías.
 
 ## 🤝 Contribuir
 

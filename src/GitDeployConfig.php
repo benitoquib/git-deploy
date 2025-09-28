@@ -32,25 +32,44 @@ class GitDeployConfig
     public static function fromEnv(): self
     {
         $config = [
-            'jwt_secret' => $_ENV['JWT_SECRET'] ?? null,
-            'git_binary' => $_ENV['GIT_BINARY'] ?? '/usr/bin/git',
-            'project_root' => $_ENV['PROJECT_ROOT'] ?? getcwd(),
-            'timezone' => $_ENV['TIMEZONE'] ?? 'America/Guatemala',
+            // Main configuration with fallback support
+            'jwt_secret' => self::getEnvWithFallback('GITDEPLOY_JWT_SECRET', 'JWT_SECRET'),
+            'git_binary' => self::getEnvWithFallback('GITDEPLOY_GIT_BINARY', 'GIT_BINARY', '/usr/bin/git'),
+            'project_root' => self::getEnvWithFallback('GITDEPLOY_PROJECT_ROOT', 'PROJECT_ROOT', getcwd()),
+            'timezone' => self::getEnvWithFallback('GITDEPLOY_TIMEZONE', 'TIMEZONE', 'America/Guatemala'),
+            
+            // Telegram configuration
             'telegram' => [
-                'bot_token' => $_ENV['TELEGRAM_BOT_TOKEN'] ?? null,
-                'chat_id' => $_ENV['TELEGRAM_CHAT_ID'] ?? null,
+                'bot_token' => self::getEnvWithFallback('GITDEPLOY_TELEGRAM_BOT_TOKEN', 'TELEGRAM_BOT_TOKEN'),
+                'chat_id' => self::getEnvWithFallback('GITDEPLOY_TELEGRAM_CHAT_ID', 'TELEGRAM_CHAT_ID'),
+                'enabled' => true,
             ],
+            
+            // JWT configuration
             'jwt' => [
-                'algorithm' => $_ENV['JWT_ALGO'] ?? 'HS256',
-                'issuer' => $_ENV['JWT_ISSUER'] ?? 'central_system',
-                'audience' => $_ENV['JWT_AUDIENCE'] ?? 'central_system',
-                'expiration' => (int) ($_ENV['JWT_EXPIRATION'] ?? 3600), // 1 hour
-                'leeway' => (int) ($_ENV['JWT_LEEWAY'] ?? 30), // 30 seconds
+                'algorithm' => self::getEnvWithFallback('GITDEPLOY_JWT_ALGO', 'JWT_ALGO', 'HS256'),
+                'issuer' => self::getEnvWithFallback('GITDEPLOY_JWT_ISSUER', 'JWT_ISSUER', 'central_system'),
+                'audience' => self::getEnvWithFallback('GITDEPLOY_JWT_AUDIENCE', 'JWT_AUDIENCE', 'central_system'),
+                'expiration' => (int) self::getEnvWithFallback('GITDEPLOY_JWT_EXPIRATION', 'JWT_EXPIRATION', '3600'),
+                'leeway' => (int) self::getEnvWithFallback('GITDEPLOY_JWT_LEEWAY', 'JWT_LEEWAY', '30'),
             ],
+            
+            // Deployment configuration
             'deployment' => [
-                'enabled' => filter_var($_ENV['DEPLOYMENT_ENABLED'] ?? 'true', FILTER_VALIDATE_BOOLEAN),
-                'auto_composer' => filter_var($_ENV['AUTO_COMPOSER'] ?? 'true', FILTER_VALIDATE_BOOLEAN),
-                'backup_commits' => filter_var($_ENV['BACKUP_COMMITS'] ?? 'true', FILTER_VALIDATE_BOOLEAN),
+                'enabled' => filter_var(self::getEnvWithFallback('GITDEPLOY_DEPLOYMENT_ENABLED', 'DEPLOYMENT_ENABLED', 'true'), FILTER_VALIDATE_BOOLEAN),
+                'auto_composer' => filter_var(self::getEnvWithFallback('GITDEPLOY_AUTO_COMPOSER', 'AUTO_COMPOSER', 'true'), FILTER_VALIDATE_BOOLEAN),
+                'backup_commits' => filter_var(self::getEnvWithFallback('GITDEPLOY_BACKUP_COMMITS', 'BACKUP_COMMITS', 'true'), FILTER_VALIDATE_BOOLEAN),
+                'clear_cache' => filter_var(self::getEnvWithFallback('GITDEPLOY_CLEAR_CACHE', 'CLEAR_CACHE', 'false'), FILTER_VALIDATE_BOOLEAN),
+                'fix_permissions' => filter_var(self::getEnvWithFallback('GITDEPLOY_FIX_PERMISSIONS', 'FIX_PERMISSIONS', 'false'), FILTER_VALIDATE_BOOLEAN),
+                'composer_binary' => self::getEnvWithFallback('GITDEPLOY_COMPOSER_BINARY', 'COMPOSER_BINARY'),
+                'custom_script' => self::getEnvWithFallback('GITDEPLOY_CUSTOM_SCRIPT_PATH', 'CUSTOM_SCRIPT_PATH'),
+                'max_backup_age_hours' => (int) self::getEnvWithFallback('GITDEPLOY_MAX_BACKUP_AGE_HOURS', 'MAX_BACKUP_AGE_HOURS', '168'),
+            ],
+            
+            // Security configuration
+            'security' => [
+                'validate_gitlab_ips' => filter_var(self::getEnvWithFallback('GITDEPLOY_VALIDATE_GITLAB_IPS', 'VALIDATE_GITLAB_IPS', 'false'), FILTER_VALIDATE_BOOLEAN),
+                'allowed_ips' => array_filter(explode(',', self::getEnvWithFallback('GITDEPLOY_ALLOWED_IPS', 'ALLOWED_IPS', ''))),
             ]
         ];
         
@@ -183,6 +202,35 @@ class GitDeployConfig
         }
         
         $current = $value;
+    }
+    
+    /**
+     * Get environment variable with fallback support
+     * Checks prefixed version first, then fallback, then default
+     */
+    private static function getEnvWithFallback(string $prefixedKey, string $fallbackKey = null, string $default = null): ?string
+    {
+        // Check prefixed version first (new format)
+        $value = $_ENV[$prefixedKey] ?? null;
+        
+        if ($value !== null) {
+            return $value;
+        }
+        
+        // Check fallback version (old format for backward compatibility)
+        if ($fallbackKey !== null) {
+            $value = $_ENV[$fallbackKey] ?? null;
+            
+            if ($value !== null) {
+                // Log deprecation warning for old format
+                if (function_exists('error_log')) {
+                    error_log("GitDeploy: Using deprecated environment variable '{$fallbackKey}'. Please use '{$prefixedKey}' instead. The old format will be removed in v2.0.0");
+                }
+                return $value;
+            }
+        }
+        
+        return $default;
     }
     
     public function toArray(): array
