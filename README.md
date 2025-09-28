@@ -18,6 +18,25 @@ Un paquete PHP completo para manejar despliegues automatizados con webhooks de G
 
 ## 📦 Instalación
 
+Como el paquete no se ha subido a Packagist, puedes instalarlo agregando el repositorio VCS directamente en tu `composer.json`:
+
+```json
+"repositories": [
+  {
+    "type": "vcs",
+    "url": "https://github.com/benitoquib/git-deploy"
+  }
+]
+```
+
+Luego instala el paquete con Composer:
+
+```bash
+composer require benitoquib/git-deploy:dev-main 
+```
+
+> **Nota:** Cuando el paquete esté disponible en Packagist, podrás instalarlo directamente con el comando siguiente sin necesidad de agregar el repositorio.
+
 ```bash
 composer require benitoquib/git-deploy
 ```
@@ -137,6 +156,25 @@ $notifier->sendErrorNotification($exception, 'Deployment Error');
 GitDeploy se integra perfectamente con Laravel. Aquí te mostramos cómo configurarlo paso a paso.
 
 ### 1. Instalación en Laravel
+
+Como el paquete no se ha subido a Packagist, puedes instalarlo agregando el repositorio VCS directamente en tu `composer.json`:
+
+```json
+"repositories": [
+  {
+    "type": "vcs",
+    "url": "https://github.com/benitoquib/git-deploy"
+  }
+]
+```
+
+Luego instala el paquete con Composer:
+
+```bash
+composer require benitoquib/git-deploy:dev-main 
+```
+
+> **Nota:** Cuando el paquete esté disponible en Packagist, podrás instalarlo directamente con el comando siguiente sin necesidad de agregar el repositorio.
 
 ```bash
 # En tu proyecto Laravel
