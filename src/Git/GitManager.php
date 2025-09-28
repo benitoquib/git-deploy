@@ -49,7 +49,15 @@ class GitManager
     public function stashChanges(): array
     {
         try {
-            $result = $this->repository->execute('stash', 'push', '--keep-index', '--', '.', ':!.htaccess');
+            $result = $this->repository->execute(
+                'stash',
+                'push',
+                '--keep-index',
+                '--',
+                '.',
+                ':!.htaccess',
+                ':!public/.htaccess'
+            );
             return is_array($result) ? $result : [$result];
         } catch (Exception $e) {
             throw new GitDeployException("Failed to stash changes: " . $e->getMessage());
