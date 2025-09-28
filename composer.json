@@ -17,6 +17,12 @@
       "email": "benitoquib98@gmail.com"
     }
   ],
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/benitoquib/git-deploy"
+    }
+  ],
   "require": {
     "php": ">=7.4",
     "firebase/php-jwt": "^6.0",
